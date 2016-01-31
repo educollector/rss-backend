@@ -134,23 +134,35 @@ public class DatabaseManager {
   //RSS
 
   public String login (User user) throws SQLException{
-    User userFromDb = checkUser(user);
-    //if(userFromDb instanceof User){
+    User userFromDb = getUserFromDbForNameAndPassword(user);
     if(userFromDb != null){
-      //user is in db, make session
+      //user is in db, password is correct -> make or session
       return  makeSession(userFromDb);
     }else{
-      //no user name or invalid password
+      //invalid password
+      //no user name in database
       return  null;
     }
   }
 
-  public User checkUser(User user) throws SQLException{
+  public User getUserFromDbForNameAndPassword(User user) throws SQLException{
     String queryCheckUser = "SELECT * FROM USER WHERE NAME = \'" + user.getName() + "' AND password =\'" + user.getPassword()+"\';";
     PreparedStatement isUserInDatabase = connect.prepareStatement(queryCheckUser);
     ResultSet resultSet = isUserInDatabase.executeQuery();
     User userFromDb = User.fromResultSet(resultSet);
     return userFromDb;
+  }
+
+  public boolean checkUserExistInDb(User user) throws SQLException{
+    String queryCheckUser = "SELECT * FROM USER WHERE NAME = \'" + user.getName() +"\';";
+    PreparedStatement isUserInDatabase = connect.prepareStatement(queryCheckUser);
+    ResultSet resultSet = isUserInDatabase.executeQuery();
+    User userFromDb = User.fromResultSet(resultSet);
+    if(userFromDb != null){
+      return true;
+    }else{
+      return false;
+    }
   }
 
   public String makeSession(User userFromDb) throws SQLException{

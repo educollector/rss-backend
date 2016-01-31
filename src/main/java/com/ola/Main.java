@@ -41,14 +41,18 @@ public class Main {
             User user = gson.fromJson(req.body(), User.class);
             String result = databaseManager.login(user);
             if(result == null){
-                return "{\"message\":\"noUser\"}";
+                if(databaseManager.checkUserExistInDb(user)){
+                    //invalid password
+                    return "{\"message\":\"invalidPassword\"}";
+                }else{
+                    //no user name in database
+                    return "{\"message\":\"noUser\"}";
+                }
             }else{
                 String json = "{\"message\":\"logged\", \"token\":\"" + result + "\"}";
                 return json;
             }
 
         });
-
-        //res.redirect("/orderfinished");
     }
 }
