@@ -22,11 +22,10 @@ public class Main {
     public static void main(String[] args) throws SQLException {
 
         DatabaseManager databaseManager = new DatabaseManager();
-        ViewModelMappingManager viewModelMappingManager = new ViewModelMappingManager(databaseManager);
 
         Gson gson = new Gson();
         String personJson = "{\"name\":\"Jan Kowalskki\"}";
-        Person personFromJson = gson.fromJson(personJson, Person.class);
+        //Person personFromJson = gson.fromJson(personJson, Person.class);
 
         Spark.staticFileLocation("/static");
 
@@ -36,14 +35,7 @@ public class Main {
         System.out.println("UUID One: " + idOne);
         System.out.println("UUID Two: " + idTwo);
 
-        get("/login", "application/json", (req, res) -> {
-            Person newPerson = new Person("Anna Kowalska");
-            return gson.toJson(newPerson);
-        });
-
-        post("/login", (req, res) -> {
-            String userName = req.queryParams("user");
-            String password = req.queryParams("password");
+        post("/login", "application/json", (req, res) -> {
             String body = req.body();
 
             User user = gson.fromJson(req.body(), User.class);

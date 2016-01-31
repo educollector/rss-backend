@@ -18,8 +18,11 @@ public class User {
             user.setId(resultSet.getInt(resultSet.findColumn(COLUMN_ID)));
             user.setName(resultSet.getString(resultSet.findColumn(COLUMN_NAME)));
             user.setPassword(resultSet.getString(resultSet.findColumn(COLUMN_PASSWORD)));
+            return user;
         }
-        return user;
+        else {
+            return null;
+        }
     }
 
 
