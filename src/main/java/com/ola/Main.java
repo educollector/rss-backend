@@ -1,13 +1,9 @@
 package com.ola;
 import com.google.gson.Gson;
 import com.ola.model.*;
-import spark.ModelAndView;
 import spark.Spark;
-import spark.template.thymeleaf.ThymeleafTemplateEngine;
 
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 
 import static java.lang.Integer.parseInt;
@@ -35,24 +31,44 @@ public class Main {
         System.out.println("UUID One: " + idOne);
         System.out.println("UUID Two: " + idTwo);
 
+
+        post("/register", "application/json", (req, res) -> {
+            String body = req.body();
+            User user = gson.fromJson(req.body(), User.class);
+            if(!(user.getPassword().equals(user.getPasswordRepeated()))){
+                return StringsManager.stringInvalidPassword();
+            }
+            if(databaseManager.checkUserExistInDbByName(user)){
+                return StringsManager.stringNickNotAvailable();
+            }else{
+                //nick is available, can register
+                String result = databaseManager.register(user);
+                if(result == null){
+                    return StringsManager.stringRegistrationFailed();
+                }else{
+                    String json = StringsManager.stringRegistrationSucceedWithToken() + result + "\"}";
+                    return json;
+                }
+            }
+        });
+
         post("/login", "application/json", (req, res) -> {
             String body = req.body();
 
             User user = gson.fromJson(req.body(), User.class);
             String result = databaseManager.login(user);
             if(result == null){
-                if(databaseManager.checkUserExistInDb(user)){
+                if(databaseManager.checkUserExistInDbByName(user)){
                     //invalid password
-                    return "{\"message\":\"invalidPassword\"}";
+                    return StringsManager.stringInvalidPassword();
                 }else{
                     //no user name in database
-                    return "{\"message\":\"noUser\"}";
+                    return StringsManager.stringNickNotAvailable();
                 }
             }else{
-                String json = "{\"message\":\"logged\", \"token\":\"" + result + "\"}";
+                String json = StringsManager.stringUserLoggedWithToken() + result + "\"}";
                 return json;
             }
-
         });
     }
 }

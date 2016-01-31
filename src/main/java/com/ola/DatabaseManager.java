@@ -133,7 +133,24 @@ public class DatabaseManager {
 
   //RSS
 
-  public String login (User user) throws SQLException{
+
+  public String register(User user) throws SQLException{
+    if(checkUserExistInDbByName(user)){
+      return null;
+    }
+    String makeNewUser = "INSERT INTO USER (NAME,PASSWORD) VALUES (\'" + user.getName() + "\', \'"  + user.getPassword() + "\');";
+    PreparedStatement statement = connect.prepareStatement(makeNewUser);
+    int result = statement.executeUpdate();
+    if(result == 1){
+      //check if the user is in database and generate session token
+      return login(user); //returns sesion or null when sth goes wrong
+    }else{
+      //result == 2 or 0, no rows in db were manipulated
+      return null;
+    }
+  }
+
+  public String login(User user) throws SQLException{
     User userFromDb = getUserFromDbForNameAndPassword(user);
     if(userFromDb != null){
       //user is in db, password is correct -> make or session
@@ -153,7 +170,7 @@ public class DatabaseManager {
     return userFromDb;
   }
 
-  public boolean checkUserExistInDb(User user) throws SQLException{
+  public boolean checkUserExistInDbByName(User user) throws SQLException{
     String queryCheckUser = "SELECT * FROM USER WHERE NAME = \'" + user.getName() +"\';";
     PreparedStatement isUserInDatabase = connect.prepareStatement(queryCheckUser);
     ResultSet resultSet = isUserInDatabase.executeQuery();
@@ -197,8 +214,12 @@ public class DatabaseManager {
             expDateToSave + ");";
     PreparedStatement preparedStatement = connect.prepareStatement(query);
     int test = preparedStatement.executeUpdate();
-    //TODO return token or null
-    return  token.toString();
+    if(test == 1){
+      return  token.toString();
+    }else{
+      return null; // TODO: Handle null
+    }
+
   }
 
   public void deleteExpiredSesions() throws SQLException{
