@@ -12,9 +12,9 @@ public class StringsManager {
         return "{\"message\":\"noUser\"}";
     }
 
-    public static String stringInvalidPassword() {
-        return "{\"message\":\"invalidPassword\"}";
-    }
+    public static String stringInvalidPassword() { return "{\"message\":\"invalidPassword\"}";}
+
+    public static String stringInvalidNameOrPassword() { return "{\"message\":\"invalidNameOrPassword\"}";}
 
     public static String stringNickNotAvailable() {
         return "{\"message\":\"userNameNotAvailable\"}";
@@ -32,4 +32,4 @@ public class StringsManager {
         return "{\"message\":\"registrationFailed\"";
     }
 
-}
+    {}}

@@ -58,13 +58,7 @@ public class Main {
             User user = gson.fromJson(req.body(), User.class);
             String result = databaseManager.login(user);
             if(result == null){
-                if(databaseManager.checkUserExistInDbByName(user)){
-                    //invalid password
-                    return StringsManager.stringInvalidPassword();
-                }else{
-                    //no user name in database
-                    return StringsManager.stringNickNotAvailable();
-                }
+                return StringsManager.stringInvalidNameOrPassword();
             }else{
                 String json = StringsManager.stringUserLoggedWithToken() + result + "\"}";
                 return json;
