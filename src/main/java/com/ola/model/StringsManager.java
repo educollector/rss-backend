@@ -32,4 +32,4 @@ public class StringsManager {
         return "{\"message\":\"registrationFailed\"";
     }
 
-    {}}
+}

@@ -1,60 +1,27 @@
 package com.ola.model;
 
+import com.j256.ormlite.field.DatabaseField;
+import com.j256.ormlite.table.DatabaseTable;
+import lombok.Data;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
 /**
  * Created by olaskierbiszewska on 31.12.15.
  */
+@DatabaseTable(tableName = User.TABLE_NAME)
+@Data
 public class User {
+    public static final String TABLE_NAME = "USER";
+    public static final String COLUMN_ID = "ID";
+    public static final String COLUMN_NAME = "NAME";
+    public static final String COLUMN_PASSWORD = "PASSWORD";
 
-    private static final String COLUMN_ID = "ID";
-    private static final String COLUMN_NAME = "NAME";
-    private static final String COLUMN_PASSWORD = "PASSWORD";
-
-    public static User fromResultSet(ResultSet resultSet) throws SQLException {
-        User user = new User();
-        if (resultSet.next()) {
-            user.setId(resultSet.getInt(resultSet.findColumn(COLUMN_ID)));
-            user.setName(resultSet.getString(resultSet.findColumn(COLUMN_NAME)));
-            user.setPassword(resultSet.getString(resultSet.findColumn(COLUMN_PASSWORD)));
-            return user;
-        }
-        else {
-            return null;
-        }
-    }
-
-
-    private Integer id;
+    @DatabaseField(columnName = COLUMN_ID, generatedId = true)
+    private Long id;
+    @DatabaseField(columnName = COLUMN_NAME)
     private String name;
+    @DatabaseField(columnName = COLUMN_PASSWORD)
     private String password;
-    private String passwordRepeated;
-
-    public User() {
-    }
-
-    public Integer getId() { return id; }
-
-    public void setId(Integer id) { this.id = id; }
-
-    public User(String name) {
-        this.name = name;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getPassword() { return password; }
-
-    public void setPassword(String password) { this.password = password; }
-
-    public String getPasswordRepeated() { return passwordRepeated; }
-
-    public void setPasswordRepeated(String passwordRepeated) { this.passwordRepeated = passwordRepeated; }
 }

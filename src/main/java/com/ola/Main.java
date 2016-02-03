@@ -35,9 +35,6 @@ public class Main {
         post("/register", "application/json", (req, res) -> {
             String body = req.body();
             User user = gson.fromJson(req.body(), User.class);
-            if(!(user.getPassword().equals(user.getPasswordRepeated()))){
-                return StringsManager.stringInvalidPassword();
-            }
             if(databaseManager.checkUserExistInDbByName(user)){
                 return StringsManager.stringNickNotAvailable();
             }else{
