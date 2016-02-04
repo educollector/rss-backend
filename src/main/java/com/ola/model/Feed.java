@@ -15,8 +15,8 @@ public class Feed {
 
     @DatabaseField(columnName = COLUMN_ID, generatedId = true)
     private Long id;
-    @DatabaseField(columnName = COLUMN_URL, generatedId = true)
+    @DatabaseField(columnName = COLUMN_URL)
     private String url;
-    @DatabaseField(columnName = COLUMN_SYNC_TIMESTAMP, generatedId = true)
+    @DatabaseField(columnName = COLUMN_SYNC_TIMESTAMP)
     private String syncTimestamp;
 }

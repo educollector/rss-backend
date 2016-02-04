@@ -11,11 +11,11 @@ import lombok.Data;
 @Data
 public class Session {
     public static final String TABLE_NAME = "SESSION";
-    public static final String COLUMN_ID = "ID";
+    public static final String COLUMN_ID_USER = "ID_USER";
     public static final String COLUMN_TOKEN = "TOKEN";
     public static final String COLUMN_EXP_DATE= "EXP_DATE";
 
-    @DatabaseField(columnName = COLUMN_ID, generatedId = true)
+    @DatabaseField(columnName = COLUMN_ID_USER)
     private Long id;
     @DatabaseField(columnName = COLUMN_TOKEN)
     private String token;

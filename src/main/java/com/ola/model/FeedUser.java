@@ -25,7 +25,7 @@ public class FeedUser {
     @DatabaseField(columnName = COLUMN_ID_FEED)
     private Long idFeed;
     @DatabaseField(columnName = COLUMN_ID_DELETED)
-    private Bool isDeleted;
+    private boolean isDeleted;
     @DatabaseField(columnName = COLUMN_UPDATE_DATE)
     private Long updateDate;
 }
