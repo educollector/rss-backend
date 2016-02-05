@@ -7,10 +7,10 @@ import lombok.Data;
 /**
  * Created by olaskierbiszewska on 04.02.16.
  */
-@DatabaseTable(tableName = Session.TABLE_NAME)
+@DatabaseTable(tableName = Sesion.TABLE_NAME)
 @Data
-public class Session {
-    public static final String TABLE_NAME = "SESSION";
+public class Sesion {
+    public static final String TABLE_NAME = "SESION";
     public static final String COLUMN_ID_USER = "ID_USER";
     public static final String COLUMN_TOKEN = "TOKEN";
     public static final String COLUMN_EXP_DATE= "EXP_DATE";

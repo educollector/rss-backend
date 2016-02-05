@@ -5,17 +5,8 @@ import com.j256.ormlite.dao.DaoManager;
 import com.j256.ormlite.jdbc.JdbcConnectionSource;
 import com.j256.ormlite.support.ConnectionSource;
 import com.ola.model.*;
-import com.sun.org.apache.xpath.internal.operations.Bool;
-import org.thymeleaf.util.DateUtils;
 
-import javax.jws.soap.SOAPBinding;
 import java.sql.*;
-import java.util.Date;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.List;
 import java.util.UUID;
 
 /**
@@ -30,7 +21,7 @@ public class DatabaseManager {
 
   private Connection connect = null;
   private Dao<User, Long> userDao;
-  private Dao<Session, Long> sesionDao;
+  private Dao<Sesion, Long> sesionDao;
   private Dao<FeedUser, Long> feedUserDao;
   private Dao<Feed, Long> feedDao;
 
@@ -43,7 +34,7 @@ public class DatabaseManager {
 
     // instantiate the DAOs
     userDao = DaoManager.createDao(connectionSource, User.class);
-    sesionDao = DaoManager.createDao(connectionSource, Session.class);
+    sesionDao = DaoManager.createDao(connectionSource, Sesion.class);
     feedUserDao = DaoManager.createDao(connectionSource, FeedUser.class);
     feedDao = DaoManager.createDao(connectionSource, Feed.class);
   }
@@ -100,8 +91,8 @@ public class DatabaseManager {
     deleteExpiredSesions();
     long expPeriod = 3600000; //hour
 
-    Session sesionUpdate = sesionDao.queryBuilder().where().eq(Session.COLUMN_ID_USER, userFromDb.getId()).queryForFirst();
-    if(sesionUpdate != null){
+    Sesion sesionUpdate = sesionDao.queryBuilder().where().eq(Sesion.COLUMN_ID_USER, userFromDb.getId()).queryForFirst();
+    if(sesionUpdate == null){
       //no sesion for this user
       String sessionToken = makeNewSessionFroUser(userFromDb, expPeriod);
       return  sessionToken;
@@ -115,7 +106,7 @@ public class DatabaseManager {
   public String makeNewSessionFroUser (User userFromDb, long expPeriod) throws SQLException{
     UUID token = UUID.randomUUID();
     long expDateToSave = (System.currentTimeMillis()+expPeriod);
-    Session sesionToSave = new Session();
+    Sesion sesionToSave = new Sesion();
     sesionToSave.setToken(token.toString());
     sesionToSave.setExpDate(expDateToSave);
     //save session to database
@@ -128,7 +119,7 @@ public class DatabaseManager {
   }
 
   public void deleteExpiredSesions() throws SQLException{
-    sesionDao.deleteBuilder().where().le(Session.COLUMN_EXP_DATE, System.currentTimeMillis());
+    sesionDao.deleteBuilder().where().le(Sesion.COLUMN_EXP_DATE, System.currentTimeMillis());
     sesionDao.deleteBuilder().delete();
   }
 }
