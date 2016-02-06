@@ -129,10 +129,10 @@ public class DatabaseManager {
     sesionDao.deleteBuilder().delete();
   }
 
-  public boolean saveFeeds(FeedRequest feedRequest) throws SQLException{
+  public FeedRequest saveFeeds(FeedRequest feedRequest) throws SQLException{
     long userId =  getUserIdWithToken(feedRequest.getToken());
     if(userId == 0){
-      return false; //user is not logged - it shouldn happen - handled on mobile
+      return null; //user is not logged - it shouldn happen - handled on mobile
     }else{
       /************************************************************/
       long syncTime = feedRequest.getTimestamp()+1;
@@ -171,7 +171,7 @@ public class DatabaseManager {
         }
       }
 
-      // (2) save DELTED with user id
+      // (2) save DELETED with user id
       for(String url : feedRequest.getDeleted()){
         //FEED
         long feedId;
@@ -212,6 +212,7 @@ public class DatabaseManager {
       ArrayList<String>creatUpdat = new ArrayList();
       ArrayList<String>deleted = new ArrayList();
       /************************************************************/
+
       // (3) make an array of created/updated feeds from the last sync
       List<FeedUser> feedsForUserIds = feedUserDao.queryBuilder().where().eq(FeedUser.COLUMN_ID_USER, userId).and().ge(FeedUser.COLUMN_UPDATE_DATE, feedRequest.getTimestamp()).query();
       for(FeedUser feedUser : feedsForUserIds){
@@ -227,16 +228,11 @@ public class DatabaseManager {
           feedUserDao.update(feedUser);
         }
       }
-      feedRequest.setTimestamp(currentSyncTime);
+      feedRequestToRetur.setToken(feedRequest.getToken());
+      feedRequestToRetur.setTimestamp(currentSyncTime);
       feedRequestToRetur.setCreatedUpdated(creatUpdat);
       feedRequestToRetur.setDeleted(deleted);
-
-
-
-
-      // (4) make an array of deleted feeds from the timestamp
-
-      return true;
+      return feedRequestToRetur;
     }
   }
 

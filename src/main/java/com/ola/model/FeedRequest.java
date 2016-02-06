@@ -1,7 +1,8 @@
 package com.ola.model;
 
+import com.google.gson.annotations.SerializedName;
 import lombok.Data;
-
+import com.google.gson.annotations.Expose;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,9 +11,9 @@ import java.util.List;
  */
 @Data
 public class FeedRequest {
-    private Long timestamp;
-    private String token;
-    private ArrayList<String> createdUpdated;
-    private ArrayList<String> deleted;
+    @SerializedName("timestamp") private Long timestamp;
+    @Expose private String token;
+    @Expose private ArrayList<String> createdUpdated;
+    @Expose private ArrayList<String> deleted;
 
 }

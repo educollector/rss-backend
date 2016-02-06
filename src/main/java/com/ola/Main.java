@@ -1,5 +1,6 @@
 package com.ola;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.ola.model.*;
 import spark.Spark;
 
@@ -63,11 +64,11 @@ public class Main {
 
         post("/saveFeeds", "application/json", (req, res) -> {
             FeedRequest feedRequest = gson.fromJson(req.body(), FeedRequest.class);
-            boolean result = databaseManager.saveFeeds(feedRequest);
-            if(result){
-                return "success";
-            }else{
+            FeedRequest result = databaseManager.saveFeeds(feedRequest);
+            if(result == null){
                 return "fail";
+            }else{
+                return gson.toJson(result);
             }
 
         });
