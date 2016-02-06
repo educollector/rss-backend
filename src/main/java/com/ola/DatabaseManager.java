@@ -4,10 +4,14 @@ import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.dao.DaoManager;
 import com.j256.ormlite.jdbc.JdbcConnectionSource;
 import com.j256.ormlite.stmt.PreparedUpdate;
+import com.j256.ormlite.stmt.QueryBuilder;
 import com.j256.ormlite.support.ConnectionSource;
 import com.ola.model.*;
+import com.sun.org.apache.bcel.internal.generic.ARRAYLENGTH;
 
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -130,9 +134,10 @@ public class DatabaseManager {
     if(userId == 0){
       return false; //user is not logged - it shouldn happen - handled on mobile
     }else{
-      long syncTime = System.currentTimeMillis();
-
-      //save CREATED AND UPDATED with user id
+      /************************************************************/
+      long syncTime = feedRequest.getTimestamp()+1;
+      /************************************************************/
+      // (1) save CREATED AND UPDATED with user id
       for(String url : feedRequest.getCreatedUpdated()){
         //FEED
         long feedId;
@@ -166,7 +171,7 @@ public class DatabaseManager {
         }
       }
 
-      //save DELTED with user id
+      // (2) save DELTED with user id
       for(String url : feedRequest.getDeleted()){
         //FEED
         long feedId;
@@ -199,6 +204,38 @@ public class DatabaseManager {
           feedUserDao.create(feedUserToSave);
         }
       }
+
+      //RETURNING
+      /************************************************************/
+      long currentSyncTime = System.currentTimeMillis();
+      FeedRequest feedRequestToRetur = new FeedRequest();
+      ArrayList<String>creatUpdat = new ArrayList();
+      ArrayList<String>deleted = new ArrayList();
+      /************************************************************/
+      // (3) make an array of created/updated feeds from the last sync
+      List<FeedUser> feedsForUserIds = feedUserDao.queryBuilder().where().eq(FeedUser.COLUMN_ID_USER, userId).and().ge(FeedUser.COLUMN_UPDATE_DATE, feedRequest.getTimestamp()).query();
+      for(FeedUser feedUser : feedsForUserIds){
+        Feed feed = feedDao.queryBuilder().where().eq(Feed.COLUMN_ID, feedUser.getIdFeed()).queryForFirst();
+        if(feed != null){
+          if(feedUser.isDeleted()){
+            deleted.add(feed.getUrl());
+          }else {
+            creatUpdat.add(feed.getUrl());
+          }
+          //update sunc date
+          feedUser.setUpdateDate(currentSyncTime);
+          feedUserDao.update(feedUser);
+        }
+      }
+      feedRequest.setTimestamp(currentSyncTime);
+      feedRequestToRetur.setCreatedUpdated(creatUpdat);
+      feedRequestToRetur.setDeleted(deleted);
+
+
+
+
+      // (4) make an array of deleted feeds from the timestamp
+
       return true;
     }
   }

@@ -1,6 +1,8 @@
 package com.ola.model;
 
 import lombok.Data;
+
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -8,9 +10,9 @@ import java.util.List;
  */
 @Data
 public class FeedRequest {
-    private String timestamp;
+    private Long timestamp;
     private String token;
-    private List<String> createdUpdated;
-    private List<String> deleted;
+    private ArrayList<String> createdUpdated;
+    private ArrayList<String> deleted;
 
 }
