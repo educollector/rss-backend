@@ -16,7 +16,7 @@ public class Sesion {
     public static final String COLUMN_EXP_DATE= "EXP_DATE";
 
     @DatabaseField(columnName = COLUMN_ID_USER)
-    private Long id;
+    private Long idUser;
     @DatabaseField(columnName = COLUMN_TOKEN)
     private String token;
     @DatabaseField(columnName = COLUMN_EXP_DATE)

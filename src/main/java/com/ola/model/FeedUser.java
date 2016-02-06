@@ -11,8 +11,8 @@ import lombok.Data;
 @DatabaseTable(tableName = FeedUser.TABLE_NAME)
 @Data
 public class FeedUser {
-    public static final String TABLE_NAME = "USER_FEED";
     public static final String COLUMN_ID = "ID";
+    public static final String TABLE_NAME = "FEED_USER";
     public static final String COLUMN_ID_USER = "ID_USER";
     public static final String COLUMN_ID_FEED = "ID_FEED";
     public static final String COLUMN_ID_DELETED = "ID_DELETED";

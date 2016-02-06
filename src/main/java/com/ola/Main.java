@@ -18,7 +18,6 @@ public class Main {
     public static void main(String[] args) throws SQLException {
 
         DatabaseManager databaseManager = new DatabaseManager();
-
         Gson gson = new Gson();
         String personJson = "{\"name\":\"Jan Kowalskki\"}";
         //Person personFromJson = gson.fromJson(personJson, Person.class);
@@ -60,6 +59,17 @@ public class Main {
                 String json = StringsManager.stringUserLoggedWithToken() + result + "\"}";
                 return json;
             }
+        });
+
+        post("/saveFeeds", "application/json", (req, res) -> {
+            FeedRequest feedRequest = gson.fromJson(req.body(), FeedRequest.class);
+            boolean result = databaseManager.saveFeeds(feedRequest);
+            if(result){
+                return "success";
+            }else{
+                return "fail";
+            }
+
         });
     }
 }

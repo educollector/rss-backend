@@ -3,6 +3,7 @@ package com.ola;
 import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.dao.DaoManager;
 import com.j256.ormlite.jdbc.JdbcConnectionSource;
+import com.j256.ormlite.stmt.PreparedUpdate;
 import com.j256.ormlite.support.ConnectionSource;
 import com.ola.model.*;
 
@@ -109,6 +110,7 @@ public class DatabaseManager {
     Sesion sesionToSave = new Sesion();
     sesionToSave.setToken(token.toString());
     sesionToSave.setExpDate(expDateToSave);
+    sesionToSave.setIdUser(userFromDb.getId());
     //save session to database
     int result = sesionDao.create(sesionToSave);
     if(result == 1){
@@ -121,6 +123,89 @@ public class DatabaseManager {
   public void deleteExpiredSesions() throws SQLException{
     sesionDao.deleteBuilder().where().le(Sesion.COLUMN_EXP_DATE, System.currentTimeMillis());
     sesionDao.deleteBuilder().delete();
+  }
+
+  public boolean saveFeeds(FeedRequest feedRequest) throws SQLException{
+    long userId =  getUserIdWithToken(feedRequest.getToken());
+    if(userId == 0){
+      return false; //user is not logged - it shouldn happen - handled on mobile
+    }else{
+      long syncTime = System.currentTimeMillis();
+
+      //save CREATED AND UPDATED with user id
+      for(String url : feedRequest.getCreatedUpdated()){
+        //FEED
+        long feedId;
+        Feed feedFromDb = feedDao.queryBuilder().where().eq(Feed.COLUMN_URL, url).queryForFirst();
+        if(feedFromDb != null){
+          feedFromDb.setSyncTimestamp(syncTime);
+          feedDao.update(feedFromDb);
+          feedId = feedFromDb.getId();
+        }else{
+          Feed feedToAdd = new Feed();
+          feedToAdd.setUrl(url);
+          feedToAdd.setSyncTimestamp(syncTime);
+          feedDao.create(feedToAdd);
+          feedId = feedToAdd.getId();
+        }
+        //FEED_USER
+        FeedUser feedUser = feedUserDao.queryBuilder().where().eq(FeedUser.COLUMN_ID_FEED, feedId).and().eq(FeedUser.COLUMN_ID_USER, userId).queryForFirst();
+        if(feedUser != null){
+          //update feed_user entitty
+          feedUser.setUpdateDate(syncTime);
+          feedUser.setDeleted(false);
+          feedUserDao.update(feedUser);
+        }else{
+          //create feed_user entitty for given id_user and id_feed
+          FeedUser feedUserToSave = new FeedUser();
+          feedUserToSave.setIdFeed(feedId);
+          feedUserToSave.setIdUser(userId);
+          feedUserToSave.setUpdateDate(syncTime);
+          feedUserToSave.setDeleted(false);
+          feedUserDao.create(feedUserToSave);
+        }
+      }
+
+      //save DELTED with user id
+      for(String url : feedRequest.getDeleted()){
+        //FEED
+        long feedId;
+        Feed feedFromDb = feedDao.queryBuilder().where().eq(Feed.COLUMN_URL, url).queryForFirst();
+        if(feedFromDb != null){
+          feedFromDb.setSyncTimestamp(syncTime);
+          feedDao.update(feedFromDb);
+          feedId = feedFromDb.getId();
+        }else{
+          Feed feedToAdd = new Feed();
+          feedToAdd.setUrl(url);
+          feedToAdd.setSyncTimestamp(syncTime);
+          feedDao.create(feedToAdd);
+          feedId = feedToAdd.getId();
+        }
+        //FEED_USER
+        FeedUser feedUser = feedUserDao.queryBuilder().where().eq(FeedUser.COLUMN_ID_FEED, feedId).and().eq(FeedUser.COLUMN_ID_USER, userId).queryForFirst();
+        if(feedUser != null){
+          //update feed_user entitty
+          feedUser.setUpdateDate(syncTime);
+          feedUser.setDeleted(true);
+          feedUserDao.update(feedUser);
+        }else{
+          //create feed_user entitty for given id_user and id_feed
+          FeedUser feedUserToSave = new FeedUser();
+          feedUserToSave.setIdFeed(feedId);
+          feedUserToSave.setIdUser(userId);
+          feedUserToSave.setUpdateDate(syncTime);
+          feedUserToSave.setDeleted(true);
+          feedUserDao.create(feedUserToSave);
+        }
+      }
+      return true;
+    }
+  }
+
+  private long getUserIdWithToken(String token) throws SQLException{
+    Sesion sesion = sesionDao.queryBuilder().where().eq(Sesion.COLUMN_TOKEN, token).queryForFirst();
+    return (sesion != null) ? sesion.getIdUser() : 0;
   }
 }
 
