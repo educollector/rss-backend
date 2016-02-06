@@ -154,7 +154,10 @@ public class DatabaseManager {
           feedId = feedToAdd.getId();
         }
         //FEED_USER
-        FeedUser feedUser = feedUserDao.queryBuilder().where().eq(FeedUser.COLUMN_ID_FEED, feedId).and().eq(FeedUser.COLUMN_ID_USER, userId).queryForFirst();
+        FeedUser feedUser = feedUserDao.queryBuilder().where()
+                .eq(FeedUser.COLUMN_ID_FEED, feedId).and()
+                .eq(FeedUser.COLUMN_ID_USER, userId)
+                .queryForFirst();
         if(feedUser != null){
           //update feed_user entitty
           feedUser.setUpdateDate(syncTime);
@@ -188,7 +191,10 @@ public class DatabaseManager {
           feedId = feedToAdd.getId();
         }
         //FEED_USER
-        FeedUser feedUser = feedUserDao.queryBuilder().where().eq(FeedUser.COLUMN_ID_FEED, feedId).and().eq(FeedUser.COLUMN_ID_USER, userId).queryForFirst();
+        FeedUser feedUser = feedUserDao.queryBuilder().where()
+                .eq(FeedUser.COLUMN_ID_FEED, feedId).and()
+                .eq(FeedUser.COLUMN_ID_USER, userId)
+                .queryForFirst();
         if(feedUser != null){
           //update feed_user entitty
           feedUser.setUpdateDate(syncTime);
@@ -214,7 +220,22 @@ public class DatabaseManager {
       /************************************************************/
 
       // (3) make an array of created/updated feeds from the last sync
-      List<FeedUser> feedsForUserIds = feedUserDao.queryBuilder().where().eq(FeedUser.COLUMN_ID_USER, userId).and().ge(FeedUser.COLUMN_UPDATE_DATE, feedRequest.getTimestamp()).query();
+      //TODO: czemu to nie filtruje po dacie tylko zwraca wszystkie?
+//      List<FeedUser> feedsForUserIds = feedUserDao.queryBuilder().where()
+//              .eq(FeedUser.COLUMN_ID_USER, userId).and()
+//              .ge(FeedUser.COLUMN_UPDATE_DATE, feedRequest.getTimestamp()).query();
+      //WORKAROUND
+      ArrayList<FeedUser> feedsForUserIds = new ArrayList();
+      List<FeedUser> tmpList = feedUserDao.queryBuilder().where()
+              .eq(FeedUser.COLUMN_ID_USER, userId).query();
+      for(FeedUser fU : tmpList){
+        if(fU.getUpdateDate() > feedRequest.getTimestamp()){
+          feedsForUserIds.add(fU);
+        }
+      }
+      //WORKAROUND_END
+
+
       for(FeedUser feedUser : feedsForUserIds){
         Feed feed = feedDao.queryBuilder().where().eq(Feed.COLUMN_ID, feedUser.getIdFeed()).queryForFirst();
         if(feed != null){
