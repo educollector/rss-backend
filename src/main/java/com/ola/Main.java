@@ -4,12 +4,12 @@ import com.google.gson.GsonBuilder;
 import com.ola.model.*;
 import spark.Spark;
 
+import javax.naming.AuthenticationException;
 import java.sql.SQLException;
 import java.util.UUID;
 
 import static java.lang.Integer.parseInt;
-import static spark.Spark.get;
-import static spark.Spark.post;
+import static spark.Spark.*;
 
 /**
  * Created by olaskierbiszewska on 24.10.15.
@@ -20,17 +20,7 @@ public class Main {
 
         DatabaseManager databaseManager = new DatabaseManager();
         Gson gson = new Gson();
-        String personJson = "{\"name\":\"Jan Kowalskki\"}";
-        //Person personFromJson = gson.fromJson(personJson, Person.class);
-
         Spark.staticFileLocation("/static");
-
-        //generate random UUIDs
-        UUID idOne = UUID.randomUUID();
-        UUID idTwo = UUID.randomUUID();
-        System.out.println("UUID One: " + idOne);
-        System.out.println("UUID Two: " + idTwo);
-
 
         post("/register", "application/json", (req, res) -> {
             String body = req.body();
@@ -62,15 +52,16 @@ public class Main {
             }
         });
 
-        post("/saveFeeds", "application/json", (req, res) -> {
+        post("/syncFeed", "application/json", (req, res) -> {
             FeedRequest feedRequest = gson.fromJson(req.body(), FeedRequest.class);
-            FeedRequest result = databaseManager.saveFeeds(feedRequest);
-            if(result == null){
-                return "fail";
-            }else{
-                return gson.toJson(result);
-            }
+            User authUser = databaseManager.authSession(feedRequest.getToken());
+            FeedRequest result = databaseManager.saveFeeds(feedRequest, authUser);
+            return gson.toJson(result);
+        });
 
+        exception(AuthenticationException.class, (e, req, res) -> {
+            res.status(401);
+            res.body(e.getMessage());
         });
     }
 }

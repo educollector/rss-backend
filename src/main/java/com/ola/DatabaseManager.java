@@ -9,6 +9,7 @@ import com.j256.ormlite.support.ConnectionSource;
 import com.ola.model.*;
 import com.sun.org.apache.bcel.internal.generic.ARRAYLENGTH;
 
+import javax.naming.AuthenticationException;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -81,7 +82,7 @@ public class DatabaseManager {
     }
   }
 
-  public User getUserFromDbForNameAndPassword(User user) throws SQLException{
+  private User getUserFromDbForNameAndPassword(User user) throws SQLException{
     //TODO: to zapytanie nie działa, zawsze zwraca null
     User filtereduser = userDao.queryBuilder().where().eq(User.COLUMN_NAME, user.getName()).and().eq(User.COLUMN_PASSWORD, user.getPassword()).queryForFirst();
     if(filtereduser != null){
@@ -91,7 +92,7 @@ public class DatabaseManager {
     }
   }
 
-  public String makeSession(User userFromDb) throws SQLException{
+  private String makeSession(User userFromDb) throws SQLException{
     //delete all expired sessions
     deleteExpiredSesions();
     long expPeriod = 3600000; //hour
@@ -108,7 +109,7 @@ public class DatabaseManager {
     }
   }
 
-  public String makeNewSessionFroUser (User userFromDb, long expPeriod) throws SQLException{
+  private String makeNewSessionFroUser (User userFromDb, long expPeriod) throws SQLException{
     UUID token = UUID.randomUUID();
     long expDateToSave = (System.currentTimeMillis()+expPeriod);
     Sesion sesionToSave = new Sesion();
@@ -124,142 +125,140 @@ public class DatabaseManager {
     }
   }
 
-  public void deleteExpiredSesions() throws SQLException{
+  private void deleteExpiredSesions() throws SQLException{
     sesionDao.deleteBuilder().where().le(Sesion.COLUMN_EXP_DATE, System.currentTimeMillis());
     sesionDao.deleteBuilder().delete();
   }
 
-  public FeedRequest saveFeeds(FeedRequest feedRequest) throws SQLException{
-    long userId =  getUserIdWithToken(feedRequest.getToken());
-    if(userId == 0){
-      return null; //user is not logged - it shouldn happen - handled on mobile
-    }else{
-      /************************************************************/
-      long syncTime = feedRequest.getTimestamp()+1;
-      /************************************************************/
-      // (1) save CREATED AND UPDATED with user id
-      for(String url : feedRequest.getCreatedUpdated()){
-        //FEED
-        long feedId;
-        Feed feedFromDb = feedDao.queryBuilder().where().eq(Feed.COLUMN_URL, url).queryForFirst();
-        if(feedFromDb != null){
-          feedFromDb.setSyncTimestamp(syncTime);
-          feedDao.update(feedFromDb);
-          feedId = feedFromDb.getId();
-        }else{
-          Feed feedToAdd = new Feed();
-          feedToAdd.setUrl(url);
-          feedToAdd.setSyncTimestamp(syncTime);
-          feedDao.create(feedToAdd);
-          feedId = feedToAdd.getId();
-        }
-        //FEED_USER
-        FeedUser feedUser = feedUserDao.queryBuilder().where()
-                .eq(FeedUser.COLUMN_ID_FEED, feedId).and()
-                .eq(FeedUser.COLUMN_ID_USER, userId)
-                .queryForFirst();
-        if(feedUser != null){
-          //update feed_user entitty
-          feedUser.setUpdateDate(syncTime);
-          feedUser.setDeleted(false);
-          feedUserDao.update(feedUser);
-        }else{
-          //create feed_user entitty for given id_user and id_feed
-          FeedUser feedUserToSave = new FeedUser();
-          feedUserToSave.setIdFeed(feedId);
-          feedUserToSave.setIdUser(userId);
-          feedUserToSave.setUpdateDate(syncTime);
-          feedUserToSave.setDeleted(false);
-          feedUserDao.create(feedUserToSave);
-        }
+  public FeedRequest saveFeeds(FeedRequest feedRequest, User authenticatedUser) throws SQLException{
+    long userId = authenticatedUser.getId(); //getUserIdWithToken(feedRequest.getToken());
+    /************************************************************/
+    long now = System.currentTimeMillis();//feedRequest.getTimestamp()+1;
+    /************************************************************/
+    // (1) save CREATED AND UPDATED with user id
+    for(String url : feedRequest.getCreatedUpdated()){
+      //FEED
+      long feedId;
+      Feed feedFromDb = feedDao.queryBuilder().where().eq(Feed.COLUMN_URL, url).queryForFirst();
+      if(feedFromDb != null){
+        feedFromDb.setSyncTimestamp(now);
+        feedDao.update(feedFromDb);
+        feedId = feedFromDb.getId();
+      }else{
+        Feed feedToAdd = new Feed();
+        feedToAdd.setUrl(url);
+        feedToAdd.setSyncTimestamp(now);
+        feedDao.create(feedToAdd);
+        feedId = feedToAdd.getId();
       }
-
-      // (2) save DELETED with user id
-      for(String url : feedRequest.getDeleted()){
-        //FEED
-        long feedId;
-        Feed feedFromDb = feedDao.queryBuilder().where().eq(Feed.COLUMN_URL, url).queryForFirst();
-        if(feedFromDb != null){
-          feedFromDb.setSyncTimestamp(syncTime);
-          feedDao.update(feedFromDb);
-          feedId = feedFromDb.getId();
-        }else{
-          Feed feedToAdd = new Feed();
-          feedToAdd.setUrl(url);
-          feedToAdd.setSyncTimestamp(syncTime);
-          feedDao.create(feedToAdd);
-          feedId = feedToAdd.getId();
-        }
-        //FEED_USER
-        FeedUser feedUser = feedUserDao.queryBuilder().where()
-                .eq(FeedUser.COLUMN_ID_FEED, feedId).and()
-                .eq(FeedUser.COLUMN_ID_USER, userId)
-                .queryForFirst();
-        if(feedUser != null){
-          //update feed_user entitty
-          feedUser.setUpdateDate(syncTime);
-          feedUser.setDeleted(true);
-          feedUserDao.update(feedUser);
-        }else{
-          //create feed_user entitty for given id_user and id_feed
-          FeedUser feedUserToSave = new FeedUser();
-          feedUserToSave.setIdFeed(feedId);
-          feedUserToSave.setIdUser(userId);
-          feedUserToSave.setUpdateDate(syncTime);
-          feedUserToSave.setDeleted(true);
-          feedUserDao.create(feedUserToSave);
-        }
+      //FEED_USER
+      FeedUser feedUser = feedUserDao.queryBuilder().where()
+              .eq(FeedUser.COLUMN_ID_FEED, feedId).and()
+              .eq(FeedUser.COLUMN_ID_USER, userId)
+              .queryForFirst();
+      if(feedUser != null){
+        //update feed_user entitty
+        feedUser.setUpdateDate(now);
+        feedUser.setDeleted(false);
+        feedUserDao.update(feedUser);
+      }else{
+        //create feed_user entitty for given id_user and id_feed
+        FeedUser feedUserToSave = new FeedUser();
+        feedUserToSave.setIdFeed(feedId);
+        feedUserToSave.setIdUser(userId);
+        feedUserToSave.setUpdateDate(now);
+        feedUserToSave.setDeleted(false);
+        feedUserDao.create(feedUserToSave);
       }
-
-      //RETURNING
-      /************************************************************/
-      long currentSyncTime = System.currentTimeMillis();
-      FeedRequest feedRequestToRetur = new FeedRequest();
-      ArrayList<String>creatUpdat = new ArrayList();
-      ArrayList<String>deleted = new ArrayList();
-      /************************************************************/
-
-      // (3) make an array of created/updated feeds from the last sync
-      //TODO: czemu to nie filtruje po dacie tylko zwraca wszystkie?
-//      List<FeedUser> feedsForUserIds = feedUserDao.queryBuilder().where()
-//              .eq(FeedUser.COLUMN_ID_USER, userId).and()
-//              .ge(FeedUser.COLUMN_UPDATE_DATE, feedRequest.getTimestamp()).query();
-      //WORKAROUND
-      ArrayList<FeedUser> feedsForUserIds = new ArrayList();
-      List<FeedUser> tmpList = feedUserDao.queryBuilder().where()
-              .eq(FeedUser.COLUMN_ID_USER, userId).query();
-      for(FeedUser fU : tmpList){
-        if(fU.getUpdateDate() > feedRequest.getTimestamp()){
-          feedsForUserIds.add(fU);
-        }
-      }
-      //WORKAROUND_END
-
-
-      for(FeedUser feedUser : feedsForUserIds){
-        Feed feed = feedDao.queryBuilder().where().eq(Feed.COLUMN_ID, feedUser.getIdFeed()).queryForFirst();
-        if(feed != null){
-          if(feedUser.isDeleted()){
-            deleted.add(feed.getUrl());
-          }else {
-            creatUpdat.add(feed.getUrl());
-          }
-          //update sunc date
-          feedUser.setUpdateDate(currentSyncTime);
-          feedUserDao.update(feedUser);
-        }
-      }
-      feedRequestToRetur.setToken(feedRequest.getToken());
-      feedRequestToRetur.setTimestamp(currentSyncTime);
-      feedRequestToRetur.setCreatedUpdated(creatUpdat);
-      feedRequestToRetur.setDeleted(deleted);
-      return feedRequestToRetur;
     }
+
+    // (2) save DELETED with user id
+    for(String url : feedRequest.getDeleted()){
+      //FEED
+      long feedId;
+      Feed feedFromDb = feedDao.queryBuilder().where().eq(Feed.COLUMN_URL, url).queryForFirst();
+      if(feedFromDb != null){
+        feedFromDb.setSyncTimestamp(now);
+        feedDao.update(feedFromDb);
+        feedId = feedFromDb.getId();
+      }else{
+        Feed feedToAdd = new Feed();
+        feedToAdd.setUrl(url);
+        feedToAdd.setSyncTimestamp(now);
+        feedDao.create(feedToAdd);
+        feedId = feedToAdd.getId();
+      }
+      //FEED_USER
+      FeedUser feedUser = feedUserDao.queryBuilder().where()
+              .eq(FeedUser.COLUMN_ID_FEED, feedId).and()
+              .eq(FeedUser.COLUMN_ID_USER, userId)
+              .queryForFirst();
+      if(feedUser != null){
+        //update feed_user entitty
+        feedUser.setUpdateDate(now);
+        feedUser.setDeleted(true);
+        feedUserDao.update(feedUser);
+      }else{
+        //create feed_user entitty for given id_user and id_feed
+        FeedUser feedUserToSave = new FeedUser();
+        feedUserToSave.setIdFeed(feedId);
+        feedUserToSave.setIdUser(userId);
+        feedUserToSave.setUpdateDate(now);
+        feedUserToSave.setDeleted(true);
+        feedUserDao.create(feedUserToSave);
+      }
+    }
+
+    //RETURNING
+    /************************************************************/
+    long currentSyncTime = System.currentTimeMillis();
+    FeedRequest feedRequestToRetur = new FeedRequest();
+    ArrayList<String>creatUpdat = new ArrayList();
+    ArrayList<String>deleted = new ArrayList();
+    /************************************************************/
+
+    // (3) make an array of created/updated feeds from the last sync
+    //TODO: czemu to nie filtruje po dacie tylko zwraca wszystkie?
+    List<FeedUser> feedsForUserIds = feedUserDao.queryBuilder()
+        .where()
+        .eq(FeedUser.COLUMN_ID_USER, userId)
+        .and()
+        .gt(FeedUser.COLUMN_UPDATE_DATE, feedRequest.getTimestamp())
+        .query();
+    //WORKAROUND
+//      ArrayList<FeedUser> feedsForUserIds = new ArrayList();
+//      List<FeedUser> tmpList = feedUserDao.queryBuilder().where()
+//              .eq(FeedUser.COLUMN_ID_USER, userId).query();
+//      for(FeedUser fU : tmpList){
+//        if(fU.getUpdateDate() > feedRequest.getTimestamp()){
+//          feedsForUserIds.add(fU);
+//        }
+//      }
+    //WORKAROUND_END
+
+    for(FeedUser feedUser : feedsForUserIds){
+      Feed feed = feedDao.queryBuilder().where().eq(Feed.COLUMN_ID, feedUser.getIdFeed()).queryForFirst();
+      if(feed != null){
+        if(feedUser.isDeleted()){
+          deleted.add(feed.getUrl());
+        }else {
+          creatUpdat.add(feed.getUrl());
+        }
+      }
+    }
+    feedRequestToRetur.setToken(feedRequest.getToken());
+    feedRequestToRetur.setTimestamp(now);
+    feedRequestToRetur.setCreatedUpdated(creatUpdat);
+    feedRequestToRetur.setDeleted(deleted);
+    return feedRequestToRetur;
   }
 
-  private long getUserIdWithToken(String token) throws SQLException{
+  public User authSession(String token) throws SQLException, AuthenticationException {
     Sesion sesion = sesionDao.queryBuilder().where().eq(Sesion.COLUMN_TOKEN, token).queryForFirst();
-    return (sesion != null) ? sesion.getIdUser() : 0;
+    if (sesion == null) throw new AuthenticationException("Session expired");
+    User user = userDao.queryBuilder().where().eq(User.COLUMN_ID, sesion.getIdUser()).queryForFirst();
+    if (user == null) throw new AuthenticationException("Authentication problem");
+    return user;
   }
 }
 
