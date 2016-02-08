@@ -37,8 +37,8 @@ public class Main {
         });
 
         post("/syncFeed", "application/json", (req, res) -> {
+            User authUser = databaseManager.authSession(req.headers("Auth-Token"));
             FeedRequest feedRequest = gson.fromJson(req.body(), FeedRequest.class);
-            User authUser = databaseManager.authSession(feedRequest.getToken());
             FeedRequest result = databaseManager.saveFeeds(feedRequest, authUser);
             return gson.toJson(result);
         });

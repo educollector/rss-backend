@@ -31,9 +31,6 @@ public class DatabaseManager {
   private Dao<Feed, Long> feedDao;
 
   public DatabaseManager() throws SQLException {
-//    connect = DriverManager.getConnection(JDBC_URL, DB_USER, DB_PASS);
-//
-//    String databaseUrl = JDBC_URL;
     // create a connection source to our database
     ConnectionSource connectionSource =  new JdbcConnectionSource(JDBC_URL, DB_USER, DB_PASS);
 
@@ -195,23 +192,12 @@ public class DatabaseManager {
     /************************************************************/
 
     // (3) make an array of created/updated feeds from the last sync
-    //TODO: czemu to nie filtruje po dacie tylko zwraca wszystkie?
     List<FeedUser> feedsForUserIds = feedUserDao.queryBuilder()
         .where()
         .eq(FeedUser.COLUMN_ID_USER, userId)
         .and()
         .gt(FeedUser.COLUMN_UPDATE_DATE, feedRequest.getTimestamp())
         .query();
-    //WORKAROUND
-//      ArrayList<FeedUser> feedsForUserIds = new ArrayList();
-//      List<FeedUser> tmpList = feedUserDao.queryBuilder().where()
-//              .eq(FeedUser.COLUMN_ID_USER, userId).query();
-//      for(FeedUser fU : tmpList){
-//        if(fU.getUpdateDate() > feedRequest.getTimestamp()){
-//          feedsForUserIds.add(fU);
-//        }
-//      }
-    //WORKAROUND_END
 
     for(FeedUser feedUser : feedsForUserIds){
       Feed feed = feedDao.queryBuilder().where().eq(Feed.COLUMN_ID, feedUser.getIdFeed()).queryForFirst();
@@ -223,7 +209,6 @@ public class DatabaseManager {
         }
       }
     }
-    feedRequestToRetur.setToken(feedRequest.getToken());
     feedRequestToRetur.setTimestamp(now);
     feedRequestToRetur.setCreatedUpdated(creatUpdat);
     feedRequestToRetur.setDeleted(deleted);

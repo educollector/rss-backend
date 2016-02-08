@@ -12,8 +12,6 @@ import java.util.List;
 @Data
 public class FeedRequest {
     @SerializedName("timestamp") private Long timestamp;
-    @Expose private String token;
     @Expose private ArrayList<String> createdUpdated;
     @Expose private ArrayList<String> deleted;
-
 }
