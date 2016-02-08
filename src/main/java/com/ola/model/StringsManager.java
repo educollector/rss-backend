@@ -20,16 +20,11 @@ public class StringsManager {
         return "{\"message\":\"userNameNotAvailable\"}";
     }
 
-    public static String stringUserLoggedWithToken() {
-        return "{\"message\":\"logged\", \"token\":\"";
+    public static String stringUserLoggedWithToken(String token) {
+        return "{\"message\":\"logged\", \"token\":\"" + token + "\"}";
     }
 
-    public static String stringRegistrationSucceedWithToken() {
-        return "{\"message\":\"registered\", \"token\":\"";
+    public static String stringRegistrationSucceedWithToken(String token) {
+        return "{\"message\":\"registered\", \"token\":\"" + token + "\"}";
     }
-
-    public static String stringRegistrationFailed() {
-        return "{\"message\":\"registrationFailed\"";
-    }
-
 }

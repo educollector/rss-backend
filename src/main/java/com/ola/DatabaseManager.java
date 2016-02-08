@@ -3,14 +3,13 @@ package com.ola;
 import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.dao.DaoManager;
 import com.j256.ormlite.jdbc.JdbcConnectionSource;
-import com.j256.ormlite.stmt.PreparedUpdate;
-import com.j256.ormlite.stmt.QueryBuilder;
 import com.j256.ormlite.support.ConnectionSource;
 import com.ola.model.*;
-import com.sun.org.apache.bcel.internal.generic.ARRAYLENGTH;
+import lombok.val;
 
 import javax.naming.AuthenticationException;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -21,7 +20,7 @@ import java.util.UUID;
 public class DatabaseManager {
 
   private final static String JDBC_DRIVER = "com.mysql.jdbc.Driver";
-  private final static String JDBC_URL = "jdbc:mysql://localhost:3306/wwsi_prod";
+  private final static String JDBC_URL = "jdbc:mysql://192.168.2.101:3306/wwsi_prod";
   private final static String DB_USER = "wwsi_prod";
   private final static String DB_PASS = "wwsi2015!";
 
@@ -45,50 +44,27 @@ public class DatabaseManager {
     feedDao = DaoManager.createDao(connectionSource, Feed.class);
   }
 
-  public String register(User user) throws SQLException{
+  public String register(User user) throws SQLException, AuthenticationException {
     if(checkUserExistInDbByName(user)){
-      return null;
+      throw new AuthenticationException(StringsManager.stringNickNotAvailable());
     }
-    int rowsAffected =  userDao.create(user);
-    if(rowsAffected == 1){
-      //check if the user is in database and generate session token
-      return login(user); //returns sesion or null when sth goes wrong
-    }else{
-      //result == 2 or 0, no rows in db were manipulated
-      return null;
-    }
+    userDao.create(user);
+    return login(user);
   }
 
-  public String login(User user) throws SQLException{
-    User userFromDb = getUserFromDbForNameAndPassword(user);
-    if(userFromDb != null){
-      //user is in db, password is correct -> make or session
-      return  makeSession(userFromDb);
-    }else{
-      //invalid password
-      //no user name in database
-      return  null;
-    }
+  public String login(User user) throws SQLException, AuthenticationException {
+    User authUser = userDao.queryBuilder().where().eq(User.COLUMN_NAME, user.getName()).and().eq(User.COLUMN_PASSWORD, user.getPassword()).queryForFirst();
+    if (authUser == null) throw new AuthenticationException(StringsManager.stringInvalidNameOrPassword());
+    return makeSession(authUser);
   }
 
   // HELPER METHODS
   public boolean checkUserExistInDbByName(User user) throws SQLException{
-    //TODO czemu to zapisuje a nie sprawdze
     User dbUser = userDao.queryBuilder().where().eq(User.COLUMN_NAME, user.getName()).queryForFirst();
     if (dbUser == null) {
       return false;
     }else{
       return true;
-    }
-  }
-
-  private User getUserFromDbForNameAndPassword(User user) throws SQLException{
-    //TODO: to zapytanie nie działa, zawsze zwraca null
-    User filtereduser = userDao.queryBuilder().where().eq(User.COLUMN_NAME, user.getName()).and().eq(User.COLUMN_PASSWORD, user.getPassword()).queryForFirst();
-    if(filtereduser != null){
-      return filtereduser;
-    }else {
-      return null;
     }
   }
 
@@ -125,9 +101,10 @@ public class DatabaseManager {
     }
   }
 
-  private void deleteExpiredSesions() throws SQLException{
-    sesionDao.deleteBuilder().where().le(Sesion.COLUMN_EXP_DATE, System.currentTimeMillis());
-    sesionDao.deleteBuilder().delete();
+  private void deleteExpiredSesions() throws SQLException {
+    val deleteBuilder = sesionDao.deleteBuilder();
+    deleteBuilder.where().le(Sesion.COLUMN_EXP_DATE, System.currentTimeMillis());
+    deleteBuilder.delete();
   }
 
   public FeedRequest saveFeeds(FeedRequest feedRequest, User authenticatedUser) throws SQLException{

@@ -17,7 +17,7 @@ public class Sesion {
 
     @DatabaseField(columnName = COLUMN_ID_USER)
     private Long idUser;
-    @DatabaseField(columnName = COLUMN_TOKEN)
+    @DatabaseField(columnName = COLUMN_TOKEN, id = true)
     private String token;
     @DatabaseField(columnName = COLUMN_EXP_DATE)
     private Long expDate;

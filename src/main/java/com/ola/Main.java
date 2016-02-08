@@ -25,31 +25,15 @@ public class Main {
         post("/register", "application/json", (req, res) -> {
             String body = req.body();
             User user = gson.fromJson(req.body(), User.class);
-            if(databaseManager.checkUserExistInDbByName(user)){
-                return StringsManager.stringNickNotAvailable();
-            }else{
-                //nick is available, can register
-                String result = databaseManager.register(user);
-                if(result == null){
-                    return StringsManager.stringRegistrationFailed();
-                }else{
-                    String json = StringsManager.stringRegistrationSucceedWithToken() + result + "\"}";
-                    return json;
-                }
-            }
+            String token = databaseManager.register(user);
+            return StringsManager.stringRegistrationSucceedWithToken(token);
         });
 
         post("/login", "application/json", (req, res) -> {
             String body = req.body();
-
             User user = gson.fromJson(req.body(), User.class);
-            String result = databaseManager.login(user);
-            if(result == null){
-                return StringsManager.stringInvalidNameOrPassword();
-            }else{
-                String json = StringsManager.stringUserLoggedWithToken() + result + "\"}";
-                return json;
-            }
+            String token = databaseManager.login(user);
+            return StringsManager.stringUserLoggedWithToken(token);
         });
 
         post("/syncFeed", "application/json", (req, res) -> {
