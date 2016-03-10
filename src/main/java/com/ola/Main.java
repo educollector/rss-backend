@@ -75,7 +75,7 @@ public class Main {
             // return: json with single feed
             String feedId = req.params("id");
            // Feed feed = databaseManager.getFeedForUser(feedId);
-            return ""// gson.toJson(feed);
+            return "";// gson.toJson(feed);
         });
 
         post("/feeds/{id}", "application/json", (req, res) -> {
