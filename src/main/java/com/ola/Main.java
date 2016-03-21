@@ -96,7 +96,7 @@ public class Main {
             User authUser = databaseManager.authSession(req.headers(HEADER_AUTH));
             String feedId = req.params(":id");
             Feed feed = gson.fromJson(req.body(), Feed.class);
-            databaseManager.updateFeed(feedId, feed, authUser);
+            databaseManager.updateFeedById(feedId, feed, authUser);
             return Response.success();
         });
 

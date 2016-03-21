@@ -3,6 +3,7 @@ package com.ola;
 import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.dao.DaoManager;
 import com.j256.ormlite.jdbc.JdbcConnectionSource;
+import com.j256.ormlite.stmt.DeleteBuilder;
 import com.j256.ormlite.support.ConnectionSource;
 import com.ola.model.*;
 import lombok.val;
@@ -221,6 +222,57 @@ public class DatabaseManager {
     User user = userDao.queryBuilder().where().eq(User.COLUMN_ID, sesion.getIdUser()).queryForFirst();
     if (user == null) throw new AuthenticationException("Authentication problem");
     return user;
+  }
+
+  public void create(Feed feed, User authUser) throws SQLException {
+    Feed dbFeed = new Feed();
+    dbFeed.setUrl(feed.getUrl());
+    feedDao.create(dbFeed);
+
+    FeedUser dbFeedUser = new FeedUser();
+    dbFeedUser.setIdFeed(dbFeed.getId());
+    dbFeedUser.setIdUser(authUser.getId());
+    dbFeedUser.setUpdateDate(System.currentTimeMillis());
+    dbFeedUser.setDeleted(false);
+    feedUserDao.create(dbFeedUser);
+  }
+
+  public List<Feed> getFeeds(User authUser) throws SQLException {
+    List<FeedUser> feedUserList = feedUserDao.queryBuilder()
+        .where()
+        .eq(FeedUser.COLUMN_ID_USER, authUser.getId())
+        .query();
+
+    List<Feed> feedList = new ArrayList<>();
+    for (FeedUser feedUser : feedUserList) {
+      Feed feed = feedDao.queryBuilder()
+          .where()
+          .eq(Feed.COLUMN_ID, feedUser.getIdFeed())
+          .queryForFirst();
+      feedList.add(feed);
+    }
+    return feedList;
+  }
+
+  public void deleteFeedById(String feedId, User authUser) throws SQLException {
+    DeleteBuilder<FeedUser, Long> deleteBuilder = feedUserDao.deleteBuilder();
+    deleteBuilder.where()
+        .eq(FeedUser.COLUMN_ID_FEED, feedId)
+        .and()
+        .eq(FeedUser.COLUMN_ID_USER, authUser.getId());
+    deleteBuilder.delete();
+  }
+
+  public Feed getFeedById(String feedId, User authUser) throws SQLException {
+    return feedDao.queryBuilder()
+        .where()
+        .eq(Feed.COLUMN_ID, feedId)
+        .queryForFirst();
+  }
+
+  public void updateFeedById(String feedId, Feed feed, User authUser) throws SQLException {
+    feed.setId(Long.parseLong(feedId));
+    feedDao.createOrUpdate(feed);
   }
 }
 
