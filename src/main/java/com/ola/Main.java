@@ -24,6 +24,11 @@ public class Main {
         Gson gson = new Gson();
         Spark.staticFileLocation("/static");
 
+        // HTTPS
+        // kestore generated with command:
+        // keytool -keystore rss-server -alias rss-server -genkey -keyalg RSA)
+        secure("ssl/rss-server", "password", null, null);
+
         // ROUTES
 
         post("/register", CONTENT_TYPE_JSON, (req, res) -> {
