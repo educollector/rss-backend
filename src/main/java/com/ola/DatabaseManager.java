@@ -21,7 +21,7 @@ import java.util.UUID;
 public class DatabaseManager {
 
   private final static String JDBC_DRIVER = "com.mysql.jdbc.Driver";
-  private final static String JDBC_URL = "jdbc:mysql://192.168.2.101:3306/wwsi_prod";
+  private final static String JDBC_URL = "jdbc:mysql://localhost:3306/wwsi_prod";
   private final static String DB_USER = "wwsi_prod";
   private final static String DB_PASS = "wwsi2015!";
 
@@ -95,7 +95,7 @@ public class DatabaseManager {
     if(result == 1){
       return  sesionToSave.getToken();
     }else{
-      return null; // TODO: Handle null
+      return null;
     }
   }
 
